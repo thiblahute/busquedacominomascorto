@@ -24,6 +24,7 @@
 # any later version.
 
 import pdb
+from math import sqrt
 
 class Arbol():
     """
@@ -56,14 +57,13 @@ class Arbol():
         return hijos
 
     def addNodoPadres(self, padre, nodo):
-        #pdb.set_trace()
         if nodo in self.nodos_padres:
             return False
+
         nodo_padres = []
         nodo_padres.extend(self.nodos_padres[padre])
         nodo_padres.append(padre)
         self.nodos_padres[nodo] = nodo_padres
-        #print "%s, %s" %(nodo, nodo_padres)
 
         return True
 
@@ -91,15 +91,27 @@ class busquedaA():
             hijos =  self.arbol.getHijos(nodo)
 
             self.abierta.extend(hijos)
+            self.heuristica()
 
-            #tmp = nodo
-            #while self.arbol.raiz != tmp:
-            #    tmp = self.arbol.getPadre(nodo)
             i+=1
 
         print "Ningun camino encontratdo %s" %i
         return []
 
-    def heuristica(self, desde, hasta):
-        pass
+    def heuristica(self):
+        tmpList = []
 
+        #La heuristica misma
+        def distancia_directa(nodo, objetivo):
+            return sqrt((nodo[0] - objetivo[0]) ** 2 + (nodo[1] - objetivo[1]) ** 2)
+
+        tmpList.extend(self.abierta)
+        i = 0
+        for nodo in tmpList:
+            tmpList[i] = [distancia_directa(nodo, self.arbol.objetivo), nodo]
+            i+=1
+        tmpList.sort()
+        i = 0
+        for nodo in tmpList:
+            self.abierta[i] = nodo[1]
+            i+=1

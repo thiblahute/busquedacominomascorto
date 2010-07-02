@@ -193,9 +193,12 @@ class Tablero(object):
 
         if event.button == 3:
             obstaculo = self.convertCoordTablero((mouseX, mouseY))
+            if self.camino:
+                self.camino=[]
             if not obstaculo in self.obstaculos:
-                self.obstaculos.append(obstaculo)
-                self.dibujar()
+                if obstaculo not in [self.actual, self.fin]:
+                    self.obstaculos.append(obstaculo)
+                    self.dibujar()
             else:
                 self.obstaculos.remove(obstaculo)
                 self.dibujar()
