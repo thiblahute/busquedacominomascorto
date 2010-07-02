@@ -23,28 +23,83 @@
 # the Free Software Foundation; either version 3, or (at your option)
 # any later version.
 
-class nodo():
-    def __init__(self, datos, seguientesi=None):
-        self.datos = datos
-        self.seguientes = []
+import pdb
 
-class arboleDeBusquedaA():
-    def __init__(self, raiz, objetivo):
-        self.abierta = [raiz]
-        self.cerrada = []
+class Arbol():
+    """
+        Una classe que imite el comportamiento de un arbol
+    """
+    def __init__(self, raiz, objetivo, obstaculos, tamano):
+        self.raiz = raiz
         self.objetivo = objetivo
+        self.obstaculos = obstaculos
+        self.tamano = tamano
+        self.nodos_padres = {raiz:[]}
+
+    def getHijos(self, nodo):
+        hijos = []
+        listaTest = (-1, 0, 1)
+        for x in listaTest:
+            for y in listaTest:
+                if y == 0 and x == 0:
+                    continue
+                nuevo_nodo_x = nodo[0] + x
+                nuevo_nodo_y = nodo[1] + y
+                nuevo_nodo = (nuevo_nodo_x, nuevo_nodo_y)
+                if (0 <= nuevo_nodo_x <= self.tamano and
+                        0 <= nuevo_nodo_y <= self.tamano and
+                        nuevo_nodo not in self.obstaculos):
+
+
+                    if self.addNodoPadres(nodo, nuevo_nodo):
+                        hijos.append(nuevo_nodo)
+        return hijos
+
+    def addNodoPadres(self, padre, nodo):
+        #pdb.set_trace()
+        if nodo in self.nodos_padres:
+            return False
+        nodo_padres = []
+        nodo_padres.extend(self.nodos_padres[padre])
+        nodo_padres.append(padre)
+        self.nodos_padres[nodo] = nodo_padres
+        #print "%s, %s" %(nodo, nodo_padres)
+
+        return True
+
+    def getPadres(self, nodo):
+        return self.nodos_padres[nodo]
+
+class busquedaA():
+    def __init__(self, arbol):
+        self.abierta = [arbol.raiz]
+        self.cerrada = []
+        self.arbol = arbol
 
     def hacer_busqueda(self):
-        while self.abierta:
+        print "Searching pass..."
+        #pdb.set_trace()
+        i = 0
+        while len(self.abierta) > 0:
             nodo = self.abierta[0]
             self.cerrada.append(nodo)
+            self.abierta.remove(nodo)
 
-            if nodo == objetivo:
-                self.getResultList()
-            
+            if nodo == self.arbol.objetivo:
+                return self.arbol.getPadres(nodo)
 
+            hijos =  self.arbol.getHijos(nodo)
 
+            self.abierta.extend(hijos)
 
-    def heuristica(self):
+            #tmp = nodo
+            #while self.arbol.raiz != tmp:
+            #    tmp = self.arbol.getPadre(nodo)
+            i+=1
+
+        print "Ningun camino encontratdo %s" %i
+        return []
+
+    def heuristica(self, desde, hasta):
         pass
 
