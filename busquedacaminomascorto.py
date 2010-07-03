@@ -26,6 +26,8 @@
 import pdb
 from math import sqrt
 
+(ALGORITMO_A_ASTERISCO, ALGORITMO_PRIMERO_EL_MEJOR) = range(2)
+
 class Arbol():
     """
         Una classe que imite el comportamiento de un arbol
@@ -47,8 +49,8 @@ class Arbol():
                 nuevo_nodo_x = nodo[0] + x
                 nuevo_nodo_y = nodo[1] + y
                 nuevo_nodo = (nuevo_nodo_x, nuevo_nodo_y)
-                if (0 <= nuevo_nodo_x <= self.tamano and
-                        0 <= nuevo_nodo_y <= self.tamano and
+                if (0 <= nuevo_nodo_x <= self.tamano-1 and
+                        0 <= nuevo_nodo_y <= self.tamano-1 and
                         nuevo_nodo not in self.obstaculos):
 
 
@@ -70,45 +72,60 @@ class Arbol():
     def getPadres(self, nodo):
         return self.nodos_padres[nodo]
 
-class busquedaA():
+class busqueda():
     def __init__(self, arbol):
         self.abierta = [arbol.raiz]
         self.cerrada = []
         self.arbol = arbol
 
-    def hacer_busqueda(self):
-        print "Searching pass..."
+    def hacer_busqueda(self, typo_busqueda):
+        print "==============================\nSearching pass..."
         #pdb.set_trace()
-        i = 0
         while len(self.abierta) > 0:
             nodo = self.abierta[0]
             self.cerrada.append(nodo)
             self.abierta.remove(nodo)
 
             if nodo == self.arbol.objetivo:
+                print "Largo del camino: %s" %(len(self.arbol.getPadres(nodo)))
+                print "Numero de nodos expendidos: %s" %(len(self.arbol.nodos_padres.items()))
                 return self.arbol.getPadres(nodo)
 
             hijos =  self.arbol.getHijos(nodo)
 
             self.abierta.extend(hijos)
-            self.heuristica()
+            self.heuristica(typo_busqueda)
 
-            i+=1
 
-        print "Ningun camino encontratdo %s" %i
+        print "Ningun camino encontratdo\nNumero de nodos expendidos: %s" %(len(self.arbol.nodos_padres.items()))
         return []
 
-    def heuristica(self):
+    def heuristica(self, typo_busqueda):
         tmpList = []
 
-        #La heuristica misma
+        #La fonccion equivalente a la funccion G en el algoritmo A*
+        def distancia_hasta_el_nodo(arbol, nodo):
+             return len(arbol.getPadres(nodo))
+
+
+        #La funccion equivalente a la funccion H en el algoritmo A*
         def distancia_directa(nodo, objetivo):
-            return sqrt((nodo[0] - objetivo[0]) ** 2 + (nodo[1] - objetivo[1]) ** 2)
+            #Gracias pitagoras
+            return sqrt((nodo[0] - objetivo[0]) ** 2 + (nodo[1] - objetivo[1])\
+                        ** 2)
 
         tmpList.extend(self.abierta)
         i = 0
         for nodo in tmpList:
-            tmpList[i] = [distancia_directa(nodo, self.arbol.objetivo), nodo]
+            if typo_busqueda == ALGORITMO_A_ASTERISCO:
+                #En A* f = h + g
+                numero_heuristica = distancia_directa(nodo, self.arbol.objetivo)+\
+                                   distancia_hasta_el_nodo(self.arbol, nodo)
+                tmpList[i] = [numero_heuristica, nodo]
+            elif typo_busqueda == ALGORITMO_PRIMERO_EL_MEJOR:
+                #En primero el mejor f = h
+                numero_heuristica = distancia_directa(nodo, self.arbol.objetivo)
+                tmpList[i] = [numero_heuristica, nodo]
             i+=1
         tmpList.sort()
         i = 0

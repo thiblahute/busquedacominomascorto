@@ -28,8 +28,10 @@ import os
 import sys
 from pygame.locals import *
 import random
+import time
 
-from busquedacaminomascorto import Arbol, busquedaA
+from busquedacaminomascorto import Arbol, busqueda,\
+     ALGORITMO_A_ASTERISCO, ALGORITMO_PRIMERO_EL_MEJOR
 class Tablero(object):
     def __init__(self, tamano):
         """
@@ -48,8 +50,8 @@ class Tablero(object):
         self.ventana = pygame.display.set_mode(tamano_ventana)
         pygame.display.set_caption('Inteligencia Artificial movimientos')
 
-        self.actual = ()
-        self.fin = ()
+        self.inicio = ()
+        self.objetivo = ()
         self.camino = []
         self.obstaculos = []
 
@@ -61,7 +63,8 @@ class Tablero(object):
         self.player = pygame.image.load(os.path.join("images", "player.png"))
         self.goal = pygame.image.load(os.path.join("images", "goal.png"))
         self.camino_im = pygame.image.load(os.path.join("images", "camino.png"))
-        self.cudrado_negro = pygame.image.load(os.path.join("images", "cudrado_negro.png"))
+        self.cuadrado_negro = pygame.image.load(os.path.join("images", "cuadrado_negro.png"))
+        self.explicacion = pygame.image.load(os.path.join("images", "explicacion.png"))
 
     def ConvertVentanaCoord(self, chessSquareTuple):
         (row, col) = chessSquareTuple
@@ -101,13 +104,16 @@ class Tablero(object):
 
         return obstaculos
 
+    def _dibujar_explicacion(self):
+        self.ventana.blit(self.explicacion, (0, 0))
+
     def dibujar(self):
         """
             Dibuja el tablero
         """
         self.ventana.fill((0, 0, 0))
         #TODO Permitir de agregar las explicaciones
-        #self._dibujar_explicaciones()
+        self._dibujar_explicacion()
 
         current_cuadrado = 0
         encontrado = False
@@ -115,29 +121,30 @@ class Tablero(object):
         if not self.obstaculos:
             self.obstaculos = self.getObstaculos(self.tamano)
 
-        for r in range(self.tamano):
-            for c in range(self.tamano):
-                (ventanaX, ventanaY) = self.ConvertVentanaCoord((r, c))
+        for x in range(self.tamano):
+            for y in range(self.tamano):
+                (ventanaX, ventanaY) = self.ConvertVentanaCoord((x, y))
                 encontrado = False
 
                 for obs in self.obstaculos:
-                    if (r, c) == obs:
-                        self.ventana.blit(self.cudrado_negro, (ventanaX, ventanaY))
+                    if (x, y) == obs:
+                        self.ventana.blit(self.cuadrado_negro, (ventanaX, ventanaY))
                         current_cuadrado = (current_cuadrado+1)%2
                         encontrado = True
                         break
 
                 for obs in self.camino:
-                    if (r, c) == obs:
+                    if (x, y) == obs:
                         self.ventana.blit(self.camino_im, (ventanaX, ventanaY))
                         current_cuadrado = (current_cuadrado+1)%2
                         encontrado = True
                         break
 
-                if (r, c) == self.actual:
+                if (x, y) == self.inicio:
                     self.ventana.blit(self.player, (ventanaX, ventanaY))
-                    current_cuadrado = (current_cuadrado+1)%2
-                elif (r, c) == self.fin:
+                    if not self.camino:
+                        current_cuadrado = (current_cuadrado+1)%2
+                elif (x, y) == self.objetivo:
                     self.ventana.blit(self.goal, (ventanaX, ventanaY))
                     current_cuadrado = (current_cuadrado+1)%2
                 elif current_cuadrado and not encontrado:
@@ -146,17 +153,20 @@ class Tablero(object):
                 elif not encontrado:
                     self.ventana.blit(self.cudrado_blanco, (ventanaX, ventanaY))
                     current_cuadrado = (current_cuadrado+1)%2
-
             current_cuadrado = (current_cuadrado+1)%2
+
         pygame.display.flip()
 
-    def hacerBusqueda(self):
-        if not self.actual or not self.fin:
+    def hacerBusqueda(self, typo_busqueda):
+        if not self.inicio or not self.objetivo:
             print "Tiene que seleccionar una departida y un objetivo"
             return
-        arbol = Arbol(self.actual, self.fin, self.obstaculos, self.tamano)
-        busquador = busquedaA(arbol)
-        self.camino = busquador.hacer_busqueda()
+        arbol = Arbol(self.inicio, self.objetivo, self.obstaculos, self.tamano)
+        busquador = busqueda(arbol)
+
+        t = time.clock()
+        self.camino = busquador.hacer_busqueda(typo_busqueda)
+        print "Tiempo de ejecucion: %s\n\n" %(time.clock() -t)
         self.dibujar()
 
     def CicloPrincipal(self):
@@ -171,24 +181,28 @@ class Tablero(object):
                     pygame.quit()
                     return
                 if e.key is K_RETURN:
-                    self.hacerBusqueda()
+                    self.hacerBusqueda(ALGORITMO_A_ASTERISCO)
+                if e.key in [K_RSHIFT, K_LSHIFT]:
+                    self.hacerBusqueda(ALGORITMO_PRIMERO_EL_MEJOR)
             if e.type is MOUSEBUTTONDOWN:
                 self._manejarMouseEvent(e)
 
     def _manejarMouseEvent(self, event):
         (mouseX, mouseY) = pygame.mouse.get_pos()
         if event.button == 1:
-            if not self.actual:
-                self.actual = self.convertCoordTablero((mouseX, mouseY))
+            if not self.inicio:
+                self.inicio = self.convertCoordTablero((mouseX, mouseY))
                 for testNoObstaculo in self.obstaculos:
-                    if self.actual == testNoObstaculo:
-                        self.actual = []
+                    if self.inicio == testNoObstaculo:
+                        self.inicio = []
                 self.dibujar()
-            elif not self.fin:
-                self.fin = self.convertCoordTablero((mouseX, mouseY))
+            elif not self.objetivo:
+                self.objetivo = self.convertCoordTablero((mouseX, mouseY))
+                if self.objetivo == self.inicio:
+                    self.objetivo = ()
                 for testNoObstaculo in self.obstaculos:
-                    if self.fin == testNoObstaculo:
-                        self.fin = []
+                    if self.objetivo == testNoObstaculo:
+                        self.objetivo = []
                 self.dibujar()
 
         if event.button == 3:
@@ -196,9 +210,16 @@ class Tablero(object):
             if self.camino:
                 self.camino=[]
             if not obstaculo in self.obstaculos:
-                if obstaculo not in [self.actual, self.fin]:
+                if obstaculo == self.inicio:
+                    self.inicio = ()
+                    self.dibujar()
+                elif obstaculo == self.objetivo:
+                    self.objetivo = ()
+                    self.dibujar()
+                else:
                     self.obstaculos.append(obstaculo)
                     self.dibujar()
+
             else:
                 self.obstaculos.remove(obstaculo)
                 self.dibujar()
