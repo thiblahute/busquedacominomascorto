@@ -23,7 +23,6 @@
 # the Free Software Foundation; either version 3, or (at your option)
 # any later version.
 
-import pdb
 from math import sqrt
 
 (ALGORITMO_A_ASTERISCO, ALGORITMO_PRIMERO_EL_MEJOR) = range(2)
@@ -53,7 +52,6 @@ class Arbol():
                         0 <= nuevo_nodo_y <= self.tamano-1 and
                         nuevo_nodo not in self.obstaculos):
 
-
                     if self.addNodoPadres(nodo, nuevo_nodo):
                         hijos.append(nuevo_nodo)
         return hijos
@@ -80,7 +78,6 @@ class busqueda():
 
     def hacer_busqueda(self, typo_busqueda):
         print "==============================\nSearching pass..."
-        #pdb.set_trace()
         while len(self.abierta) > 0:
             nodo = self.abierta[0]
             self.cerrada.append(nodo)
